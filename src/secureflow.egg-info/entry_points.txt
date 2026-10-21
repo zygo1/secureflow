@@ -1,0 +1,2 @@
+[console_scripts]
+secureflow = secureflow.cli:app

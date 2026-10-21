@@ -1,0 +1,26 @@
+version: 1
+
+targets:
+  juice-shop:
+    name: "OWASP Juice Shop"
+    base_url: "http://127.0.0.1:3000"
+    environment: "local-lab"
+
+profiles:
+  baseline:
+    scanners:
+      semgrep:
+        enabled: true
+      osv:
+        enabled: true
+      gitleaks:
+        enabled: true
+      zap:
+        enabled: true
+        mode: "passive"
+
+reporting:
+  formats:
+    - json
+    - markdown
+  output_dir: "output"
