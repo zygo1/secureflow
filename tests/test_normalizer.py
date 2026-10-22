@@ -1,9 +1,11 @@
 from secureflow.reporting.normalizer import (
-     normalize_semgrep, 
-     normalize_osv, 
-     normalize_gitleaks, 
-     normalize_zap
+    clean_zap_html,
+    normalize_gitleaks,
+    normalize_osv,
+    normalize_semgrep,
+    normalize_zap,
 )
+from secureflow.reporting.severity import cvss_vector_to_severity
 
 
 def test_normalize_semgrep():
@@ -127,7 +129,6 @@ def test_normalize_osv_missing_vulnerability_id():
     assert normalize_osv(data) == []
 
 
-
 def test_normalize_gitleaks():
     data = [
         {
@@ -204,3 +205,56 @@ def test_normalize_zap_unknown_severity():
     findings = normalize_zap(data)
 
     assert findings[0].severity == "unknown"
+
+
+def test_cvss_v3_critical():
+    vector = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    assert cvss_vector_to_severity(vector) == "critical"
+
+
+def test_cvss_v4_high():
+    vector = "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+    assert cvss_vector_to_severity(vector) == "high"
+
+
+def test_cvss_invalid_vector():
+    assert cvss_vector_to_severity("invalid") == "unknown"
+
+
+def test_normalize_osv_with_cvss():
+    vector = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    data = {
+        "results": [{
+            "source": {"path": "package-lock.json"},
+            "packages": [{
+                "package": {"name": "example", "version": "1.0"},
+                "vulnerabilities": [{
+                    "id": "GHSA-example",
+                    "severity": [{"type": "CVSS_V3", "score": vector}],
+                }],
+            }],
+        }],
+    }
+    findings = normalize_osv(data)
+    assert len(findings) == 1
+    assert findings[0].severity == "critical"
+
+
+def test_clean_zap_html():
+    assert clean_zap_html("<p>Example &amp; test</p>") == "Example & test"
+
+
+def test_normalize_zap_cleans_html():
+    data = {
+        "site": [{
+            "alerts": [{
+                "name": "Missing header",
+                "riskcode": 2,
+                "desc": "<p>Missing &amp; important header</p>",
+                "reference": "<p>https://example.com/advisory</p>",
+            }],
+        }],
+    }
+    finding = normalize_zap(data)[0]
+    assert finding.description == "Missing & important header"
+    assert finding.reference == "https://example.com/advisory"

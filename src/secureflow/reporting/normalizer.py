@@ -1,7 +1,9 @@
-from secureflow.reporting.models import SecurityFinding
-from secureflow.reporting.severity import cvss_vector_to_severity
 import re
 from html import unescape
+
+from secureflow.reporting.models import SecurityFinding
+from secureflow.reporting.severity import cvss_vector_to_severity
+
 
 def normalize_semgrep(data: dict) -> list[SecurityFinding]:
     findings = []
@@ -92,7 +94,6 @@ def normalize_osv(data: dict) -> list[SecurityFinding]:
     return findings
 
 
-
 def normalize_gitleaks(data: list[dict]) -> list[SecurityFinding]:
     findings = []
 
@@ -149,7 +150,11 @@ def normalize_zap(data: dict) -> list[SecurityFinding]:
 
             severity = severity_map.get(riskcode, "unknown")
 
-            name = alert.get("name") or alert.get("alert") or "Unknown ZAP alert"
+            name = (
+                alert.get("name")
+                or alert.get("alert")
+                or "Unknown ZAP alert"
+            )
 
             instances = alert.get("instances", [])
             location = None
@@ -163,8 +168,13 @@ def normalize_zap(data: dict) -> list[SecurityFinding]:
                 severity=severity,
                 description=clean_zap_html(alert.get("desc") or ""),
                 location=location,
-                rule_id=str(alert.get("alertRef") or alert.get("pluginid") or "") or None,
-                reference=clean_zap_html(alert.get("reference") or "") or None,
+                rule_id=(
+                    str(alert.get("alertRef") or alert.get("pluginid") or "")
+                    or None
+                ),
+                reference=(
+                    clean_zap_html(alert.get("reference") or "") or None
+                ),
             )
 
             findings.append(finding)
