@@ -6,6 +6,7 @@ from secureflow.scanners.semgrep import run_semgrep
 from secureflow.models import SecureFlowConfig
 from secureflow.scanners.osv import run_osv
 from secureflow.scanners.gitleaks import run_gitleaks
+from secureflow.scanners.zap import run_zap
 
 
 def create_assessment(
@@ -102,6 +103,34 @@ def run_osv_assessment(
 
     return findings_count
 
+
+def run_gitleaks_assessment(
+    source_path: Path,
+    assessment_dir: Path,
+) -> int:
+    output_path = assessment_dir / "gitleaks.json"
+
+    findings_count = run_gitleaks(
+        source_path=source_path,
+        output_path=output_path,
+    )
+
+    return findings_count
+
+
+def run_zap_assessment(
+    target_url: str,
+    assessment_dir: Path,
+) -> int:
+    output_path = assessment_dir / "zap.json"
+
+    findings_count = run_zap(
+        target_url=target_url,
+        output_path=output_path,
+    )
+
+    return findings_count
+
 def update_scanner_result(
     assessment_dir: Path,
     scanner_name: str,
@@ -128,15 +157,37 @@ def update_scanner_result(
     )
 
 
-def run_gitleaks_assessment(
-    source_path: Path,
+def finalize_assessment(
     assessment_dir: Path,
-) -> int:
-    output_path = assessment_dir / "gitleaks.json"
+    failed: bool = False,
+) -> str:
+    metadata_path = assessment_dir / "metadata.json"
 
-    findings_count = run_gitleaks(
-        source_path=source_path,
-        output_path=output_path,
+    metadata = json.loads(
+        metadata_path.read_text(encoding="utf-8")
     )
 
-    return findings_count
+    expected_scanners = set(metadata["scanners"])
+    scanner_results = metadata.get("scanner_results", {})
+
+    all_completed = all(
+        scanner_results.get(name, {}).get("status") == "completed"
+        for name in expected_scanners
+    )
+
+    metadata["status"] = (
+        "failed"
+        if failed or not all_completed
+        else "completed"
+    )
+
+    metadata["completed_at"] = (
+        datetime.now(timezone.utc).isoformat()
+    )
+
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2),
+        encoding="utf-8",
+    )
+
+    return metadata["status"]

@@ -6,6 +6,7 @@ class ScannerConfig(BaseModel):
 
     enabled: bool = False
     mode: Literal["passive", "active"] | None = None
+    
 
 class ScanProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
