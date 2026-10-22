@@ -75,3 +75,27 @@ def test_unique_run_ids(config):
     )
 
     assert first_run != second_run
+
+
+def test_record_scanner_failure(config):
+    from secureflow.runner import record_scanner_failure, finalize_assessment
+
+    run_dir = create_assessment(config, "juice-shop", "baseline")
+    record_scanner_failure(run_dir, "osv", "RuntimeError")
+
+    metadata = json.loads((run_dir / "metadata.json").read_text())
+    assert metadata["scanner_results"]["osv"] == {
+        "status": "failed",
+        "error_type": "RuntimeError",
+    }
+    assert finalize_assessment(run_dir, failed=True) == "failed"
+
+
+def test_successful_assessment(config):
+    from secureflow.runner import update_scanner_result, finalize_assessment
+
+    run_dir = create_assessment(config, "juice-shop", "baseline")
+    for name in ("semgrep", "osv", "gitleaks", "zap"):
+        update_scanner_result(run_dir, name, 0, f"{name}.json")
+
+    assert finalize_assessment(run_dir) == "completed"
