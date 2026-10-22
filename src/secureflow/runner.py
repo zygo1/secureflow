@@ -191,3 +191,23 @@ def finalize_assessment(
     )
 
     return metadata["status"]
+
+
+def record_scanner_failure(
+    assessment_dir: Path,
+    scanner_name: str,
+    error_type: str,
+) -> None:
+    """Record a failed scanner without persisting sensitive error output."""
+    metadata_path = assessment_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+    metadata.setdefault("scanner_results", {})[scanner_name] = {
+        "status": "failed",
+        "error_type": error_type,
+    }
+    metadata["status"] = "running"
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2),
+        encoding="utf-8",
+    )

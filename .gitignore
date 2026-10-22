@@ -1,0 +1,24 @@
+# Generated scanner reports (may contain detected secrets)
+output/
+
+# Local environment and secrets
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store

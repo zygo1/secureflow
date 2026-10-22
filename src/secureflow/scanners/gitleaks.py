@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -16,6 +17,8 @@ def run_gitleaks(source_path: Path, output_path: Path) -> int:
         "docker",
         "run",
         "--rm",
+        "--user",
+        f"{os.getuid()}:{os.getgid()}",
         "--mount",
         f"type=bind,source={source_path},target=/src,readonly",
         "--mount",

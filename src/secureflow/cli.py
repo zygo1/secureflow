@@ -12,6 +12,7 @@ from secureflow.runner import (
     run_gitleaks_assessment,
     run_zap_assessment,
     update_scanner_result,
+    record_scanner_failure,
     finalize_assessment,
 )
 
@@ -191,6 +192,11 @@ def scan(
             source_path = target_config.source_path
 
             if not source_path:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="semgrep",
+                    error_type="ConfigurationError",
+                )
                 typer.secho(
                     "Semgrep requires a source_path.",
                     fg=typer.colors.RED,
@@ -218,6 +224,11 @@ def scan(
                 ValueError,
                 subprocess.SubprocessError,
             ) as error:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="semgrep",
+                    error_type=type(error).__name__,
+                )
                 typer.secho(
                     f"Semgrep scan failed: {error}",
                     fg=typer.colors.RED,
@@ -238,6 +249,11 @@ def scan(
             source_path = target_config.source_path
 
             if not source_path:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="osv",
+                    error_type="ConfigurationError",
+                )
                 typer.secho(
                     "OSV-Scanner requires a source_path.",
                     fg=typer.colors.RED,
@@ -265,6 +281,11 @@ def scan(
                 ValueError,
                 subprocess.SubprocessError,
             ) as error:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="osv",
+                    error_type=type(error).__name__,
+                )
                 typer.secho(
                     f"OSV-Scanner failed: {error}",
                     fg=typer.colors.RED,
@@ -285,6 +306,11 @@ def scan(
             source_path = target_config.source_path
 
             if not source_path:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="gitleaks",
+                    error_type="ConfigurationError",
+                )
                 typer.secho(
                     "Gitleaks requires a source_path.",
                     fg=typer.colors.RED,
@@ -312,6 +338,11 @@ def scan(
                 ValueError,
                 subprocess.SubprocessError,
             ) as error:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="gitleaks",
+                    error_type=type(error).__name__,
+                )
                 typer.secho(
                     f"Gitleaks scan failed: {error}",
                     fg=typer.colors.RED,
@@ -330,6 +361,11 @@ def scan(
 
         if zap_config is not None and zap_config.enabled:
             if zap_config.mode != "passive":
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="zap",
+                    error_type="ConfigurationError",
+                )
                 typer.secho(
                     "Only passive ZAP mode is supported.",
                     fg=typer.colors.RED,
@@ -357,6 +393,11 @@ def scan(
                 ValueError,
                 subprocess.SubprocessError,
             ) as error:
+                record_scanner_failure(
+                    assessment_dir=run_dir,
+                    scanner_name="zap",
+                    error_type=type(error).__name__,
+                )
                 typer.secho(
                     f"ZAP scan failed: {error}",
                     fg=typer.colors.RED,
