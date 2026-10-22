@@ -5,7 +5,7 @@ import typer
 from secureflow.config import load_config
 from urllib.error import URLError
 from secureflow.safety import check_target_reachable
-from secureflow.runner import create_assessment, run_semgrep_assessment,update_scanner_result
+from secureflow.runner import create_assessment, run_semgrep_assessment,update_scanner_result, run_osv_assessment,run_gitleaks_assessment
 
 app = typer.Typer(
     help="SecureFlow - Application Security Assessment CLI",
@@ -159,7 +159,7 @@ def scan(
                 findings_count=findings_count,
                 output_file="semgrep.json",
             )
-            
+
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
             typer.secho(
                 f"Semgrep scan failed: {error}",
@@ -169,6 +169,96 @@ def scan(
 
         typer.secho(
             f"Semgrep completed: {findings_count} findings",
+            fg=typer.colors.GREEN,
+        )
+
+    
+    osv_config = settings.profiles[profile].scanners.get("osv")
+
+    if osv_config is not None and osv_config.enabled:
+        source_path = target_config.source_path
+
+        if not source_path:
+            typer.secho(
+                "OSV-Scanner requires a source_path.",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo("Running OSV-Scanner SCA scan...")
+
+        try:
+            findings_count = run_osv_assessment(
+                source_path=Path(source_path),
+                assessment_dir=run_dir,
+            )
+
+            update_scanner_result(
+                assessment_dir=run_dir,
+                scanner_name="osv",
+                findings_count=findings_count,
+                output_file="osv.json",
+            )
+
+        except (
+            OSError,
+            RuntimeError,
+            ValueError,
+            subprocess.SubprocessError,
+        ) as error:
+            typer.secho(
+                f"OSV-Scanner failed: {error}",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.secho(
+            f"OSV-Scanner completed: {findings_count} findings",
+            fg=typer.colors.GREEN,
+        )
+
+    
+    gitleaks_config = settings.profiles[profile].scanners.get("gitleaks")
+
+    if gitleaks_config is not None and gitleaks_config.enabled:
+        source_path = target_config.source_path
+
+        if not source_path:
+            typer.secho(
+                "Gitleaks requires a source_path.",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo("Running Gitleaks secret detection...")
+
+        try:
+            findings_count = run_gitleaks_assessment(
+                source_path=Path(source_path),
+                assessment_dir=run_dir,
+            )
+
+            update_scanner_result(
+                assessment_dir=run_dir,
+                scanner_name="gitleaks",
+                findings_count=findings_count,
+                output_file="gitleaks.json",
+            )
+
+        except (
+            OSError,
+            RuntimeError,
+            ValueError,
+            subprocess.SubprocessError,
+        ) as error:
+            typer.secho(
+                f"Gitleaks scan failed: {error}",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.secho(
+            f"Gitleaks completed: {findings_count} findings",
             fg=typer.colors.GREEN,
         )
 

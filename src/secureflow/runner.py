@@ -4,6 +4,8 @@ from pathlib import Path
 from uuid import uuid4
 from secureflow.scanners.semgrep import run_semgrep
 from secureflow.models import SecureFlowConfig
+from secureflow.scanners.osv import run_osv
+from secureflow.scanners.gitleaks import run_gitleaks
 
 
 def create_assessment(
@@ -87,6 +89,19 @@ def run_semgrep_assessment(
     return findings_count
 
 
+def run_osv_assessment(
+    source_path: Path,
+    assessment_dir: Path,
+) -> int:
+    output_path = assessment_dir / "osv.json"
+
+    findings_count = run_osv(
+        source_path=source_path,
+        output_path=output_path,
+    )
+
+    return findings_count
+
 def update_scanner_result(
     assessment_dir: Path,
     scanner_name: str,
@@ -111,3 +126,17 @@ def update_scanner_result(
         json.dumps(metadata, indent=2),
         encoding="utf-8",
     )
+
+
+def run_gitleaks_assessment(
+    source_path: Path,
+    assessment_dir: Path,
+) -> int:
+    output_path = assessment_dir / "gitleaks.json"
+
+    findings_count = run_gitleaks(
+        source_path=source_path,
+        output_path=output_path,
+    )
+
+    return findings_count
