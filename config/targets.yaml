@@ -5,6 +5,7 @@ targets:
     name: "OWASP Juice Shop"
     base_url: "http://127.0.0.1:3000"
     environment: "local-lab"
+    source_path: "../juice-shop-source"
 
 profiles:
   baseline:

@@ -1,0 +1,16 @@
+{
+  "run_id": "20261022T123150Z-62a7989c",
+  "created_at": "2026-10-22T12:31:50.649319+00:00",
+  "target_id": "juice-shop",
+  "target_name": "OWASP Juice Shop",
+  "target_url": "http://127.0.0.1:3000/",
+  "profile": "baseline",
+  "status": "initialized",
+  "scanners": [
+    "semgrep",
+    "osv",
+    "gitleaks",
+    "zap"
+  ],
+  "findings": []
+}

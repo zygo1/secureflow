@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
-
+from secureflow.scanners.semgrep import run_semgrep
 from secureflow.models import SecureFlowConfig
 
 
@@ -71,3 +71,43 @@ No security scans have been executed yet.
     )
 
     return run_dir
+
+
+def run_semgrep_assessment(
+    source_path: Path,
+    assessment_dir: Path,
+) -> int:
+    output_path = assessment_dir / "semgrep.json"
+
+    findings_count = run_semgrep(
+        source_path=source_path,
+        output_path=output_path,
+    )
+
+    return findings_count
+
+
+def update_scanner_result(
+    assessment_dir: Path,
+    scanner_name: str,
+    findings_count: int,
+    output_file: str,
+) -> None:
+    metadata_path = assessment_dir / "metadata.json"
+
+    metadata = json.loads(
+        metadata_path.read_text(encoding="utf-8")
+    )
+
+    metadata.setdefault("scanner_results", {})[scanner_name] = {
+        "status": "completed",
+        "findings_count": findings_count,
+        "output_file": output_file,
+    }
+
+    metadata["status"] = "running"
+
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2),
+        encoding="utf-8",
+    )

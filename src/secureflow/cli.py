@@ -5,7 +5,7 @@ import typer
 from secureflow.config import load_config
 from urllib.error import URLError
 from secureflow.safety import check_target_reachable
-from secureflow.runner import create_assessment
+from secureflow.runner import create_assessment, run_semgrep_assessment,update_scanner_result
 
 app = typer.Typer(
     help="SecureFlow - Application Security Assessment CLI",
@@ -132,6 +132,46 @@ def scan(
         f"Assessment initialized: {run_dir}",
         fg=typer.colors.GREEN,
     )
+
+    semgrep_config = settings.profiles[profile].scanners.get("semgrep")
+
+    if semgrep_config is not None and semgrep_config.enabled:
+        source_path = target_config.source_path
+
+        if not source_path:
+            typer.secho(
+                "Semgrep requires a source_path in the target configuration.",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo("Running Semgrep SAST scan...")
+
+        try:
+            findings_count = run_semgrep_assessment(
+                source_path=Path(source_path),
+                assessment_dir=run_dir,
+            )
+
+            update_scanner_result(
+                assessment_dir=run_dir,
+                scanner_name="semgrep",
+                findings_count=findings_count,
+                output_file="semgrep.json",
+            )
+            
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
+            typer.secho(
+                f"Semgrep scan failed: {error}",
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(code=1)
+
+        typer.secho(
+            f"Semgrep completed: {findings_count} findings",
+            fg=typer.colors.GREEN,
+        )
+
 
 
 if __name__ == "__main__":

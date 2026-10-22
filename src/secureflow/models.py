@@ -19,6 +19,7 @@ class TargetConfig(BaseModel):
     name: str = Field(min_length=1)
     base_url: HttpUrl
     environment: Literal["local-lab"] = "local-lab"
+    source_path: str | None = None
 
     @field_validator("base_url")
     @classmethod
