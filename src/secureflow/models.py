@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
+from secureflow.target_validation import validate_local_target
+
 
 class ScannerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -27,10 +29,7 @@ class TargetConfig(BaseModel):
     @field_validator("base_url")
     @classmethod
     def validate_local_target(cls, url: HttpUrl) -> HttpUrl:
-        if url.scheme != "http" or url.host != "127.0.0.1" or url.port != 3000:
-            raise ValueError(
-                "Phase 1 only allows http://127.0.0.1:3000"
-            )
+        validate_local_target(str(url))
         return url
 
 
