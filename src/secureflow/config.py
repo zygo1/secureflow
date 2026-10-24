@@ -1,7 +1,10 @@
 from pathlib import Path
+
 import yaml
 from pydantic import ValidationError
+
 from secureflow.models import SecureFlowConfig
+
 
 def load_config(config_path: str) -> SecureFlowConfig:
     path = Path(config_path)

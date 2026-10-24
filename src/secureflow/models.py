@@ -1,5 +1,7 @@
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+
 
 class ScannerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)

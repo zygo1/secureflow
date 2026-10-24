@@ -1,6 +1,6 @@
 import json
-from unittest.mock import patch
 from subprocess import CompletedProcess
+from unittest.mock import patch
 
 from secureflow.scanners.semgrep import run_semgrep
 

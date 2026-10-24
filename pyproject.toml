@@ -28,3 +28,6 @@ where = ["src"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/secureflow/cli.py" = ["B008"]
+"src/secureflow/config.py" = ["TRY004"]
+"src/secureflow/scanners/gitleaks.py" = ["TRY004"]
+"src/secureflow/scanners/zap.py" = ["TRY004"]
