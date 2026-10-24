@@ -4,6 +4,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from secureflow.models import SecureFlowConfig
+from secureflow.reporting.aggregator import aggregate_findings
+from secureflow.reporting.generator import generate_report
 from secureflow.scanners.gitleaks import run_gitleaks
 from secureflow.scanners.osv import run_osv
 from secureflow.scanners.semgrep import run_semgrep
@@ -212,3 +214,28 @@ def record_scanner_failure(
         json.dumps(metadata, indent=2),
         encoding="utf-8",
     )
+
+
+def finalize_reporting(assessment_dir: Path) -> tuple[bool, int]:
+    """Generate reports; record failures without exposing exception details."""
+    metadata_path = assessment_dir / "metadata.json"
+
+    try:
+        findings = aggregate_findings(assessment_dir)
+        generate_report(assessment_dir, findings)
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        # Reporting can fail after scanners have completed successfully.
+        # Keep the assessment status accurate and avoid logging raw data.
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["status"] = "failed"
+            metadata["report_error"] = type(error).__name__
+            metadata_path.write_text(
+                json.dumps(metadata, indent=2), encoding="utf-8"
+            )
+        except (OSError, ValueError, TypeError):
+            # The metadata file itself may be unwritable (e.g. disk full).
+            return False, 0
+        return False, 0
+
+    return True, len(findings)
