@@ -1,4 +1,3 @@
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -7,11 +6,10 @@ from urllib.error import URLError
 import typer
 
 from secureflow.config import load_config
-from secureflow.reporting.aggregator import aggregate_findings
-from secureflow.reporting.generator import generate_report
 from secureflow.runner import (
     create_assessment,
     finalize_assessment,
+    finalize_reporting,
     record_scanner_failure,
     run_gitleaks_assessment,
     run_osv_assessment,
@@ -425,34 +423,17 @@ def scan(
             failed=assessment_failed,
         )
 
-        # Generate reports from successfully completed scanners.
-        try:
-            findings = aggregate_findings(run_dir)
-            generate_report(run_dir, findings)
-
+        report_success, findings_count = finalize_reporting(run_dir)
+        if report_success:
             typer.secho(
-                f"Report generated: {len(findings)} findings",
+                f"Report generated: {findings_count} findings",
                 fg=typer.colors.GREEN,
             )
-
-        except (OSError, ValueError) as error:
+        else:
             final_status = "failed"
-
             typer.secho(
-                f"Report generation failed: {type(error).__name__}",
+                "Report generation failed; check assessment metadata.",
                 fg=typer.colors.RED,
-            )
-
-            # Keep metadata consistent with the final CLI result.
-            metadata_path = run_dir / "metadata.json"
-            metadata = json.loads(
-                metadata_path.read_text(encoding="utf-8")
-            )
-            metadata["status"] = "failed"
-            metadata["report_error"] = type(error).__name__
-            metadata_path.write_text(
-                json.dumps(metadata, indent=2),
-                encoding="utf-8",
             )
 
         color = (
