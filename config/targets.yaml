@@ -7,12 +7,12 @@ targets:
     environment: "local-lab"
     source_path: "../juice-shop-source"
 
-  # Add your own local projects, for example:
-  # react-app:
-  #   name: "React Application"
-  #   base_url: "http://127.0.0.1:5173"
-  #   environment: "local-lab"
-  #   source_path: "/absolute/path/to/react-app"
+  templates:
+    name: "Templates React App"
+    base_url: "http://127.0.0.1:3000"
+    environment: "local-lab"
+    source_path: "/home/zygo/code/kokosbet-client-templates"
+
 
 profiles:
   baseline:
@@ -25,7 +25,37 @@ profiles:
         enabled: true
       zap:
         enabled: true
-        mode: "passive"
+        mode: passive
+
+  sast-only:
+    scanners:
+      semgrep:
+        enabled: true
+
+  dependencies:
+    scanners:
+      osv:
+        enabled: true
+
+  secrets:
+    scanners:
+      gitleaks:
+        enabled: true
+
+  web-passive:
+    scanners:
+      zap:
+        enabled: true
+        mode: passive
+
+  code-security:
+    scanners:
+      semgrep:
+        enabled: true
+      osv:
+        enabled: true
+      gitleaks:
+        enabled: true
 
 reporting:
   formats:
