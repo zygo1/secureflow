@@ -7,6 +7,13 @@ targets:
     environment: "local-lab"
     source_path: "../juice-shop-source"
 
+  # Add your own local projects, for example:
+  # react-app:
+  #   name: "React Application"
+  #   base_url: "http://127.0.0.1:5173"
+  #   environment: "local-lab"
+  #   source_path: "/absolute/path/to/react-app"
+
 profiles:
   baseline:
     scanners:

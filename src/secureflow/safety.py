@@ -1,4 +1,6 @@
 from urllib.error import HTTPError
+
+from secureflow.target_validation import validate_local_target
 from urllib.request import (
     HTTPRedirectHandler,
     ProxyHandler,
@@ -21,6 +23,7 @@ class NoRedirectHandler(HTTPRedirectHandler):
 
 
 def check_target_reachable(url: str) -> int:
+    validate_local_target(url)
     opener = build_opener(ProxyHandler({}), NoRedirectHandler)
 
     request = Request(
