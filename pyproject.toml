@@ -25,3 +25,6 @@ secureflow = "secureflow.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/secureflow/cli.py" = ["B008"]

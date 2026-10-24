@@ -1,20 +1,25 @@
-from pathlib import Path
+import json
 import shutil
 import subprocess
-import typer
+from pathlib import Path
 from urllib.error import URLError
+
+import typer
+
 from secureflow.config import load_config
-from secureflow.safety import check_target_reachable
+from secureflow.reporting.aggregator import aggregate_findings
+from secureflow.reporting.generator import generate_report
 from secureflow.runner import (
     create_assessment,
-    run_semgrep_assessment,
-    run_osv_assessment,
+    finalize_assessment,
+    record_scanner_failure,
     run_gitleaks_assessment,
+    run_osv_assessment,
+    run_semgrep_assessment,
     run_zap_assessment,
     update_scanner_result,
-    record_scanner_failure,
-    finalize_assessment,
 )
+from secureflow.safety import check_target_reachable
 
 app = typer.Typer(
     help="SecureFlow - Application Security Assessment CLI",
@@ -412,12 +417,43 @@ def scan(
         # All enabled scanners finished.
         assessment_failed = False
 
+    
     finally:
-        # Runs even if a scanner raises typer.Exit.
+        # Finalize assessment metadata first.
         final_status = finalize_assessment(
             assessment_dir=run_dir,
             failed=assessment_failed,
         )
+
+        # Generate reports from successfully completed scanners.
+        try:
+            findings = aggregate_findings(run_dir)
+            generate_report(run_dir, findings)
+
+            typer.secho(
+                f"Report generated: {len(findings)} findings",
+                fg=typer.colors.GREEN,
+            )
+
+        except (OSError, ValueError) as error:
+            final_status = "failed"
+
+            typer.secho(
+                f"Report generation failed: {type(error).__name__}",
+                fg=typer.colors.RED,
+            )
+
+            # Keep metadata consistent with the final CLI result.
+            metadata_path = run_dir / "metadata.json"
+            metadata = json.loads(
+                metadata_path.read_text(encoding="utf-8")
+            )
+            metadata["status"] = "failed"
+            metadata["report_error"] = type(error).__name__
+            metadata_path.write_text(
+                json.dumps(metadata, indent=2),
+                encoding="utf-8",
+            )
 
         color = (
             typer.colors.GREEN
@@ -429,6 +465,7 @@ def scan(
             f"Assessment {final_status}: {run_dir}",
             fg=color,
         )
+
 
     if final_status != "completed":
         raise typer.Exit(code=1)
