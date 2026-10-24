@@ -1,17 +1,67 @@
+
 import json
+import os
 import subprocess
 from pathlib import Path
+
+
+SUPPORTED_LOCKFILES = {
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+}
+
+EXCLUDED_DIRECTORIES = {
+    ".git",
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+}
+
+
+def detect_lockfiles(source_path: Path) -> list[Path]:
+    """Find supported lockfiles recursively, excluding generated directories."""
+    lockfiles = []
+
+    for root, directories, files in os.walk(
+        source_path,
+        followlinks=False,
+    ):
+        directories[:] = [
+            directory
+            for directory in directories
+            if directory not in EXCLUDED_DIRECTORIES
+            and not (Path(root) / directory).is_symlink()
+        ]
+
+        for filename in files:
+            if filename not in SUPPORTED_LOCKFILES:
+                continue
+
+            lockfile = Path(root) / filename
+
+            if lockfile.is_symlink():
+                continue
+
+            if lockfile.is_file():
+                lockfiles.append(lockfile)
+
+    if not lockfiles:
+        raise FileNotFoundError(
+            f"No supported lockfiles found in {source_path}"
+        )
+
+    return sorted(lockfiles)
 
 
 def run_osv(source_path: Path, output_path: Path) -> int:
     source_path = source_path.resolve(strict=True)
 
-    lockfile = source_path / "package-lock.json"
+    if not source_path.is_dir():
+        raise ValueError("OSV source path must be a directory")
 
-    if not lockfile.is_file():
-        raise FileNotFoundError(
-            f"package-lock.json not found: {lockfile}"
-        )
+    lockfiles = detect_lockfiles(source_path)
 
     command = [
         "docker",
@@ -22,9 +72,19 @@ def run_osv(source_path: Path, output_path: Path) -> int:
         "ghcr.io/google/osv-scanner:v2.6.0",
         "scan",
         "source",
-        "--lockfile=/src/package-lock.json",
-        "--format=json",
     ]
+
+    for lockfile in lockfiles:
+        relative_path = lockfile.relative_to(source_path)
+        container_path = (
+            "/src/" + relative_path.as_posix()
+        )
+
+        command.append(
+            f"--lockfile={container_path}"
+        )
+
+    command.append("--format=json")
 
     result = subprocess.run(
         command,
