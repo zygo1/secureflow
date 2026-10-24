@@ -1,11 +1,12 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
-from secureflow.scanners.semgrep import run_semgrep
+
 from secureflow.models import SecureFlowConfig
-from secureflow.scanners.osv import run_osv
 from secureflow.scanners.gitleaks import run_gitleaks
+from secureflow.scanners.osv import run_osv
+from secureflow.scanners.semgrep import run_semgrep
 from secureflow.scanners.zap import run_zap
 
 
@@ -24,7 +25,7 @@ def create_assessment(
     target = config.targets[target_id]
     profile = config.profiles[profile_id]
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     run_id = f"{now:%Y%m%dT%H%M%SZ}-{uuid4().hex[:8]}"
 
     output_dir = Path(config.reporting.output_dir)
@@ -182,7 +183,7 @@ def finalize_assessment(
     )
 
     metadata["completed_at"] = (
-        datetime.now(timezone.utc).isoformat()
+        datetime.now(UTC).isoformat()
     )
 
     metadata_path.write_text(

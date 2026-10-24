@@ -1,6 +1,8 @@
 import pytest
+
 from secureflow.config import load_config
 from secureflow.models import TargetConfig
+
 
 def test_load_valid_config():
     config = load_config("config/targets.yaml")

@@ -1,7 +1,10 @@
 import json
+
 import pytest
+
 from secureflow.config import load_config
 from secureflow.runner import create_assessment
+
 
 @pytest.fixture
 def config(tmp_path):
@@ -78,7 +81,7 @@ def test_unique_run_ids(config):
 
 
 def test_record_scanner_failure(config):
-    from secureflow.runner import record_scanner_failure, finalize_assessment
+    from secureflow.runner import finalize_assessment, record_scanner_failure
 
     run_dir = create_assessment(config, "juice-shop", "baseline")
     record_scanner_failure(run_dir, "osv", "RuntimeError")
@@ -92,7 +95,7 @@ def test_record_scanner_failure(config):
 
 
 def test_successful_assessment(config):
-    from secureflow.runner import update_scanner_result, finalize_assessment
+    from secureflow.runner import finalize_assessment, update_scanner_result
 
     run_dir = create_assessment(config, "juice-shop", "baseline")
     for name in ("semgrep", "osv", "gitleaks", "zap"):
