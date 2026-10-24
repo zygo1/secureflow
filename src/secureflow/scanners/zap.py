@@ -2,19 +2,11 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from urllib.parse import urlparse
+from secureflow.target_validation import validate_local_target
 
 
 def run_zap(target_url: str, output_path: Path) -> int:
-    parsed_url = urlparse(target_url)
-
-    # Temporary restriction for our local Juice Shop lab.
-    if (
-        parsed_url.scheme != "http"
-        or parsed_url.hostname != "127.0.0.1"
-        or parsed_url.port != 3000
-    ):
-        raise ValueError("ZAP target is outside the allowed local lab")
+    validate_local_target(target_url)
 
     output_path = output_path.resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
